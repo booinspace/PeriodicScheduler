@@ -9,7 +9,7 @@
 class Process : public Task
 {
 public:
-    Process(const std::string &name, uint32_t frequency); 
+    Process(uint32_t frequency); 
     void execute() override;
 
     uint32_t ResolveDomain(const std::string& fqdn);

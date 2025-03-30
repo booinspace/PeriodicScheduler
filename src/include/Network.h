@@ -11,7 +11,7 @@
 class Network : public Task
 {
 public:
-    Network(const std::string &name, uint32_t frequency);
+    Network(uint32_t frequency);
     void execute() override;
     uint32_t ResolveDomain(const std::string& fqdn);
 };
