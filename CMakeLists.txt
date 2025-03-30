@@ -14,6 +14,7 @@ set(INCLUDE_DIR "${SRC_DIR}/include")
 file(GLOB_RECURSE SOURCES "${SRC_DIR}/*.cpp")
 add_executable(periodic_scheduler ${SOURCES})
 target_include_directories(periodic_scheduler PUBLIC ${INCLUDE_DIR})
+add_compile_definitions(DEBUG)
 
 # Setup compiler options
 target_compile_options(periodic_scheduler PRIVATE -Wall -Wextra -Wpedantic)

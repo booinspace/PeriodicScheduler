@@ -6,19 +6,32 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-Network::Network() : Task()
+//! Maintain only the last 10 resolves for metrics
+static constexpr uint32_t kMaxResolveTimes = 10;
+
+Network::Network(const std::string& domain) : Task(),
+domain_(domain)
 {
 }
 
 void Network::execute()
 {
-    int32_t resolve_time = ResolveDomain("google.com");
+    int32_t resolve_time = ResolveDomain(domain_);
+
+    // Remove entries from resolve times to maintain the fixed last 10 executions
+    if (resolve_times_.size() > kMaxResolveTimes)
+    {
+        resolve_times_.pop_front();
+    }
+
     resolve_times_.push_back(resolve_time);
 
+    // Maintain a lock on updating shared metrics across this task across threads
     std::lock_guard<std::mutex> lock(mtx_);
+
     metrics_.min = std::min(resolve_time, metrics_.min);
-    metrics_.max = std::min(resolve_time, metrics_.max);
-    // Use the median for average
+    metrics_.max = std::max(resolve_time, metrics_.max);
+    // Use the mean for average
     int32_t total_time = 0;
     for (int32_t time : resolve_times_)
     {
@@ -44,7 +57,7 @@ int32_t Network::ResolveDomain(const std::string& fqdn)
 
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    STATUS_LOG("Resolved domain: %s in %ldms\n", ip, duration);
+    //STATUS_LOG("Resolved domain: %s in %ldms\n", ip, duration);
 
     return duration;
 }

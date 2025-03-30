@@ -8,19 +8,6 @@
 #include "Process.h"
 #include "PeriodicScheduler.h"
 
-const std::unique_ptr<Task> Scheduler::create(TaskTypes t)
-{
-    switch(t)
-    {
-        case TaskTypes::NETWORK:
-            return std::make_unique<Network>();
-        case TaskTypes::PROCESS:
-            return std::make_unique<Process>();
-        default:
-            return nullptr;
-    }
-}
-
 void Scheduler::AddTask(std::unique_ptr<Task> task, uint32_t interval, const std::string &name)
 {
     ScheduledTask t;
@@ -46,13 +33,21 @@ void Scheduler::Run()
                 std::thread([&]() {
                     t.task->execute();
                     t.last_execution = now;
-                    STATUS_LOG("%s finished, avg: %d\n", t.name.c_str(), t.task->GetMetrics().avg);
+                    PrintMetrics(t);
                 }).detach();
             }
             // Sleep the main thread for a period
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
+}
+
+void Scheduler::PrintMetrics(const ScheduledTask& task) const
+{
+    STATUS_LOG("Task statistics: %s\n", task.name.c_str());
+    STATUS_LOG("  Min time: %d ms\n", task.task->GetMetrics().min);
+    STATUS_LOG("  Max time: %d ms\n", task.task->GetMetrics().max);
+    STATUS_LOG("  Avg time: %d ms\n", task.task->GetMetrics().avg);
 }
 
 int main(int argc, char **argv)
@@ -81,11 +76,18 @@ int main(int argc, char **argv)
         }
     }
 
-    // Create some tasks
+    // Instanciate the scheduler
     Scheduler scheduler;
 
-    scheduler.AddTask(scheduler.create(TaskTypes::NETWORK), network_interval, "DNS");
-    scheduler.AddTask(scheduler.create(TaskTypes::PROCESS), system_interval, "Memory");
+    // Create some tasks
+    std::unique_ptr<Task> task1 = std::make_unique<Network>("google.com");
+    std::unique_ptr<Task> task2 = std::make_unique<Network>("cisco.com");
+    scheduler.AddTask(std::move(task1), network_interval, "google.com");
+    scheduler.AddTask(std::move(task2), network_interval, "cisco.com");
+
+
+    //scheduler.AddTask(scheduler.create(TaskTypes::NETWORK), network_interval, "DNS");
+    //scheduler.AddTask(scheduler.create(TaskTypes::PROCESS), system_interval, "Memory");
 
     scheduler.Run();
     return 0;

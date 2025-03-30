@@ -2,18 +2,19 @@
 #define NETWORK_H
 
 #include <string>
-#include <vector>
+#include <deque>
 
 #include "Task.h"
 
 class Network : public Task
 {
 public:
-    Network();
+    Network(const std::string& domain);
     void execute() override;
-    int32_t ResolveDomain(const std::string& fqdn);
+    int32_t ResolveDomain(const std::string& domain);
 private:
-    std::vector<int32_t> resolve_times_;
+    std::deque<int32_t> resolve_times_;
+    std::string domain_;
 };
 
 #endif

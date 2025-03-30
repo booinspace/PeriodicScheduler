@@ -6,12 +6,6 @@
 #include <thread>
 #include "Task.h"
 
-enum TaskTypes : uint8_t
-{
-    NETWORK = 0,
-    PROCESS = 1
-};
-
 struct ScheduledTask
 {
     std::string name;
@@ -30,11 +24,11 @@ public:
     Scheduler(const Scheduler& scheduler) = delete;
     Scheduler(Scheduler &&scheduler) noexcept = delete;
 
-    const std::unique_ptr<Task> create(TaskTypes t);
-
     void AddTask(std::unique_ptr<Task> task, uint32_t interval, const std::string &name);
 
-    void Run();
+    void Run(void);
+
+    void PrintMetrics(const ScheduledTask& task) const;
 
 private:
     std::thread thread_;
