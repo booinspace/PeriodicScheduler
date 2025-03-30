@@ -1,7 +1,7 @@
 #include "Network.h"
 #include "Common.h"
 
-Network::Network(uint32_t frequency) : Task(frequency)
+Network::Network() : Task()
 {
     STATUS_LOG("Network::Network called");
 }

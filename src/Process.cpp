@@ -1,7 +1,7 @@
 #include "Process.h"
 #include "Common.h"
 
-Process::Process(uint32_t frequency) : Task(frequency)
+Process::Process() : Task()
 {
     STATUS_LOG("Process::Process called");
 }

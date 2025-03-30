@@ -8,22 +8,27 @@
 #include "Process.h"
 #include "PeriodicScheduler.h"
 
-const std::unique_ptr<Task> Scheduler::create(TaskTypes t, uint32_t frequency)
+const std::unique_ptr<Task> Scheduler::create(TaskTypes t)
 {
     switch(t)
     {
         case TaskTypes::NETWORK:
-            return std::make_unique<Network>(frequency);
+            return std::make_unique<Network>();
         case TaskTypes::PROCESS:
-            return std::make_unique<Process>(frequency);
+            return std::make_unique<Process>();
         default:
-            return nullptr;  
+            return nullptr;
     }
 }
 
-void Scheduler::AddTask(std::unique_ptr<Task> task)
+void Scheduler::AddTask(std::unique_ptr<Task> task, uint32_t interval)
 {
-    tasks_.push_back(std::move(task));
+    ScheduledTask t;
+    t.interval = interval;
+    t.last_execution = std::chrono::steady_clock::now();
+    t.task = std::move(task);
+
+    tasks_.push_back(std::move(t));
 }
 
 void Scheduler::Run()
@@ -32,12 +37,15 @@ void Scheduler::Run()
     {
 
         const auto now = std::chrono::steady_clock::now();
-        for (const std::unique_ptr<Task> &t : tasks_ )
+        for (ScheduledTask &t : tasks_ )
         {
-            if (now >= (t->GetLastExecution() + std::chrono::milliseconds(t->GetFrequency())))
+            if (now >= (t.last_execution + std::chrono::milliseconds(t.interval)))
             {
-                // Call to wake the task which executes work on its thread
-                t->Notify();
+                // Launch a thread to work on each task
+                std::thread([&]() {
+                    t.task->execute();
+                    t.last_execution = now;
+                }).detach();
             }
             // Sleep the main thread for a period
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -74,8 +82,8 @@ int main(int argc, char **argv)
     // Create some tasks
     Scheduler scheduler;
 
-    scheduler.AddTask(scheduler.create(TaskTypes::NETWORK, network_interval));
-    scheduler.AddTask(scheduler.create(TaskTypes::PROCESS, system_interval));
+    scheduler.AddTask(scheduler.create(TaskTypes::NETWORK), network_interval);
+    scheduler.AddTask(scheduler.create(TaskTypes::PROCESS), system_interval);
 
     scheduler.Run();
     return 0;
