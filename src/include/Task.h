@@ -9,10 +9,11 @@
 #include <mutex>
 #include <thread>
 
-enum TaskTypes : uint8_t
+struct TaskMetrics
 {
-    NETWORK = 0,
-    PROCESS = 1
+    int32_t min;
+    int32_t avg;
+    int32_t max;
 };
 
 class Task
@@ -22,6 +23,11 @@ public:
     virtual ~Task() = default;
 
     virtual void execute() = 0;
+    TaskMetrics GetMetrics(void) const;
+
+protected:
+    TaskMetrics metrics_;
+    std::mutex mtx_;
 };
 
 #endif

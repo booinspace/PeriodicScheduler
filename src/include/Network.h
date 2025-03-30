@@ -2,9 +2,7 @@
 #define NETWORK_H
 
 #include <string>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
+#include <vector>
 
 #include "Task.h"
 
@@ -13,7 +11,9 @@ class Network : public Task
 public:
     Network();
     void execute() override;
-    uint32_t ResolveDomain(const std::string& fqdn);
+    int32_t ResolveDomain(const std::string& fqdn);
+private:
+    std::vector<int32_t> resolve_times_;
 };
 
 #endif

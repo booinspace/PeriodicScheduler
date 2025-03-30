@@ -6,8 +6,15 @@
 #include <thread>
 #include "Task.h"
 
+enum TaskTypes : uint8_t
+{
+    NETWORK = 0,
+    PROCESS = 1
+};
+
 struct ScheduledTask
 {
+    std::string name;
     uint32_t interval;
     std::unique_ptr<Task> task;
     std::chrono::steady_clock::time_point last_execution;
@@ -25,7 +32,7 @@ public:
 
     const std::unique_ptr<Task> create(TaskTypes t);
 
-    void AddTask(std::unique_ptr<Task> task, uint32_t interval);
+    void AddTask(std::unique_ptr<Task> task, uint32_t interval, const std::string &name);
 
     void Run();
 

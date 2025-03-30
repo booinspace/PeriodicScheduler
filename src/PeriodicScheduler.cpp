@@ -21,9 +21,10 @@ const std::unique_ptr<Task> Scheduler::create(TaskTypes t)
     }
 }
 
-void Scheduler::AddTask(std::unique_ptr<Task> task, uint32_t interval)
+void Scheduler::AddTask(std::unique_ptr<Task> task, uint32_t interval, const std::string &name)
 {
     ScheduledTask t;
+    t.name = name;
     t.interval = interval;
     t.last_execution = std::chrono::steady_clock::now();
     t.task = std::move(task);
@@ -45,6 +46,7 @@ void Scheduler::Run()
                 std::thread([&]() {
                     t.task->execute();
                     t.last_execution = now;
+                    STATUS_LOG("%s finished, avg: %d\n", t.name.c_str(), t.task->GetMetrics().avg);
                 }).detach();
             }
             // Sleep the main thread for a period
@@ -82,8 +84,8 @@ int main(int argc, char **argv)
     // Create some tasks
     Scheduler scheduler;
 
-    scheduler.AddTask(scheduler.create(TaskTypes::NETWORK), network_interval);
-    scheduler.AddTask(scheduler.create(TaskTypes::PROCESS), system_interval);
+    scheduler.AddTask(scheduler.create(TaskTypes::NETWORK), network_interval, "DNS");
+    scheduler.AddTask(scheduler.create(TaskTypes::PROCESS), system_interval, "Memory");
 
     scheduler.Run();
     return 0;

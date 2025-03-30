@@ -3,10 +3,10 @@
 
 Process::Process() : Task()
 {
-    STATUS_LOG("Process::Process called");
 }
 
 void Process::execute()
 {
-    STATUS_LOG("Process::Execute");
+    //STATUS_LOG("Process::Execute\n");
 }
+

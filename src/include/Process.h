@@ -11,8 +11,6 @@ class Process : public Task
 public:
     Process();
     void execute() override;
-
-    uint32_t ResolveDomain(const std::string& fqdn);
 };
 
 #endif

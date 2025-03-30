@@ -4,6 +4,11 @@
 #include "Common.h"
 
 Task::Task()
+: metrics_{}
 {
-    STATUS_LOG("Task::Task");
+}
+
+TaskMetrics Task::GetMetrics(void) const
+{
+    return metrics_;
 }
