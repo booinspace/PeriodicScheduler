@@ -7,6 +7,8 @@ project(PeriodicScheduler)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 # Define source directory variables
 set(SRC_DIR "src")
 set(INCLUDE_DIR "${SRC_DIR}/include")

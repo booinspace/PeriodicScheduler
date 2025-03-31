@@ -8,6 +8,9 @@
 #include "Process.h"
 #include "PeriodicScheduler.h"
 
+// This is an implementation of a periodic scheduler
+// The same tasks added to the task list are re-run every N seconds and aggregate results are collected.
+
 void Scheduler::AddTask(std::unique_ptr<Task> task, uint32_t interval, const std::string &name)
 {
     ScheduledTask t;
@@ -84,10 +87,6 @@ int main(int argc, char **argv)
     std::unique_ptr<Task> task2 = std::make_unique<Network>("cisco.com");
     scheduler.AddTask(std::move(task1), network_interval, "google.com");
     scheduler.AddTask(std::move(task2), network_interval, "cisco.com");
-
-
-    //scheduler.AddTask(scheduler.create(TaskTypes::NETWORK), network_interval, "DNS");
-    //scheduler.AddTask(scheduler.create(TaskTypes::PROCESS), system_interval, "Memory");
 
     scheduler.Run();
     return 0;
