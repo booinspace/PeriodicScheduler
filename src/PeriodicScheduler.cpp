@@ -34,9 +34,12 @@ void Scheduler::Run()
             {
                 // Launch a thread to work on each task
                 std::thread([&]() {
-                    t.task->execute();
+                    bool complete = t.task->execute();
                     t.last_execution = now;
-                    PrintMetrics(t);
+                    if (complete)
+                    {
+                        PrintMetrics(t);
+                    }
                 }).detach();
             }
             // Sleep the main thread for a period
@@ -47,10 +50,10 @@ void Scheduler::Run()
 
 void Scheduler::PrintMetrics(const ScheduledTask& task) const
 {
-    STATUS_LOG("Task statistics: %s\n", task.name.c_str());
-    STATUS_LOG("  Min time: %d ms\n", task.task->GetMetrics().min);
-    STATUS_LOG("  Max time: %d ms\n", task.task->GetMetrics().max);
-    STATUS_LOG("  Avg time: %d ms\n", task.task->GetMetrics().avg);
+    INFO_LOG("Task statistics: %s\n", task.name.c_str());
+    INFO_LOG("  Min time: %d ms\n", task.task->GetMetrics().min);
+    INFO_LOG("  Max time: %d ms\n", task.task->GetMetrics().max);
+    INFO_LOG("  Avg time: %d ms\n", task.task->GetMetrics().avg);
 }
 
 int main(int argc, char **argv)
@@ -84,9 +87,9 @@ int main(int argc, char **argv)
 
     // Create some tasks
     std::unique_ptr<Task> task1 = std::make_unique<Network>("google.com");
-    std::unique_ptr<Task> task2 = std::make_unique<Network>("cisco.com");
+    //std::unique_ptr<Task> task2 = std::make_unique<Network>("cisco.com");
     scheduler.AddTask(std::move(task1), network_interval, "google.com");
-    scheduler.AddTask(std::move(task2), network_interval, "cisco.com");
+    //scheduler.AddTask(std::move(task2), network_interval, "cisco.com");
 
     scheduler.Run();
     return 0;

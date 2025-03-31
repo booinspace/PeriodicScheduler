@@ -22,7 +22,7 @@ public:
     Task();
     virtual ~Task() = default;
 
-    virtual void execute() = 0;
+    virtual bool execute() = 0;
     TaskMetrics GetMetrics(void) const;
 
 protected:

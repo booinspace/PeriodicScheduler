@@ -19,38 +19,34 @@ domain_(domain)
 
 Network::~Network(void)
 {
+    delete host_->ar_request;
     delete host_;
 }
 
 //! @brief Execute this class behaviour
-void Network::execute()
+bool Network::execute()
 {
-    if (!start_)
-    {
-        start_ = std::chrono::steady_clock::now();
-    }
+    start_.push_back(std::chrono::steady_clock::now());
 
     char ip[INET_ADDRSTRLEN];
     if (ResolveDomainAsync(domain_, ip, sizeof(ip)) == 0)
     {
-        if (!end_)
+        STATUS_LOG("Resolved %s attempts: %ld\n", ip, start_.size());
+        end_.push_back(std::chrono::steady_clock::now());
+
+        // Work out the resolved time by adding the difference from all executions to resolve
+        int32_t resolve_time = 0;
+        for (uint32_t i = 0; i < start_.size(); i++)
         {
-            end_ = std::chrono::steady_clock::now();
+            resolve_time += std::chrono::duration_cast<std::chrono::milliseconds>(end_[i] - start_[i]).count();
         }
-        int32_t resolve_time = std::chrono::duration_cast<std::chrono::milliseconds>(*end_ - *start_).count();
 
         // If the domain resolved, reset the start and end times so that the task will run again
-        end_ = std::nullopt;
-        start_ = std::nullopt;
-        host_ = nullptr;
+        start_.clear();
+        end_.clear();
+        host_->ar_name = 0;
 
-        // Remove entries from resolve times to maintain the fixed last 10 executions
-        if (resolve_times_.size() > kMaxResolveTimes)
-        {
-            resolve_times_.pop_front();
-        }
-
-        resolve_times_.push_back(resolve_time);
+        // Work out metrics
 
         // Maintain a lock on updating shared metrics across this task across threads
         std::lock_guard<std::mutex> lock(mtx_);
@@ -58,13 +54,34 @@ void Network::execute()
         metrics_.min = std::min(resolve_time, metrics_.min);
         metrics_.max = std::max(resolve_time, metrics_.max);
         // Use the mean for average
+        // Remove entries from resolve times to maintain the fixed last 10 executions
+        if (resolve_times_.size() > kMaxResolveTimes)
+        {
+            resolve_times_.pop_front();
+        }
+        resolve_times_.push_back(resolve_time);
+
         int32_t total_time = 0;
         for (int32_t time : resolve_times_)
         {
             total_time += time;
         }
         metrics_.avg = total_time / resolve_times_.size();
+
+        return true;
     }
+
+    end_.push_back(std::chrono::steady_clock::now());
+    return false;
+}
+
+//! @brief Calculate the seconds and nanoseconds from a chrono duration
+const timespec Network::CalculateTimespec(std::chrono::milliseconds duration)
+{
+    struct timespec ts;
+    ts.tv_sec = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+    ts.tv_nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(duration % std::chrono::seconds(1)).count();
+    return ts;
 }
 
 int Network::ResolveDomainAsync(const std::string& fqdn, char* ip, size_t ip_size)
@@ -77,13 +94,12 @@ int Network::ResolveDomainAsync(const std::string& fqdn, char* ip, size_t ip_siz
         ret = getnameinfo(host_->ar_result->ai_addr, host_->ar_result->ai_addrlen, ip, ip_size, nullptr, 0, NI_NUMERICHOST);
         return 0;
     }
-    // It could have previously already started resolve, but we need to check to see if the value is ready
     else if (ret == EAI_INPROGRESS)
     {
+        STATUS_ERR("Still in progress\n");
         return -1;
     }
     // Otherwise lets setup a new resolve
-
     struct addrinfo hints;
     std::memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -92,20 +108,18 @@ int Network::ResolveDomainAsync(const std::string& fqdn, char* ip, size_t ip_siz
     host_->ar_name = fqdn.c_str();
     host_->ar_request = &hints;
 
-    int status = getaddrinfo_a(GAI_NOWAIT, &host_, 1, nullptr);
-    if (status)
+    ret = getaddrinfo_a(GAI_NOWAIT, &host_, 1, nullptr);
+    if (ret)
     {
-        STATUS_ERR("Failed to setup DNS resolve: %s\n", gai_strerror(status));
+        STATUS_ERR("Failed to setup DNS resolve: %s\n", gai_strerror(ret));
         return -1;
     }
 
     // 100ms timeout
-    struct timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = 100000000;
+    struct timespec ts = CalculateTimespec(std::chrono::milliseconds(50));
     ret = gai_suspend(&host_, 1, &ts);
     if (ret != 0) {
-        STATUS_ERR("Failed to wait for resolve: %s\n", gai_strerror(ret));
+        STATUS_ERR("Timed out resolving: %s\n", fqdn.c_str());
         return -1;
     }
     if (!gai_error(host_))

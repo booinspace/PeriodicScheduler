@@ -5,8 +5,10 @@ Process::Process() : Task()
 {
 }
 
-void Process::execute()
+bool Process::execute()
 {
     //STATUS_LOG("Process::Execute\n");
+
+    return true;
 }
 

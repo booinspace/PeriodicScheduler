@@ -10,7 +10,7 @@ class Process : public Task
 {
 public:
     Process();
-    void execute() override;
+    bool execute() override;
 };
 
 #endif
