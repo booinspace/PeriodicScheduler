@@ -6,17 +6,23 @@
 #include <thread>
 #include "Task.h"
 
+//! Define a Task to run
 struct ScheduledTask
 {
+    //! Name of the task for logging
     std::string name;
+    //! How often this task should run
     uint32_t interval;
-    std::unique_ptr<Task> task;
+    //! A time point for when this task was last run
     std::chrono::steady_clock::time_point last_execution;
+    //! The task object itself
+    std::unique_ptr<Task> task;
 };
 
 class Scheduler
 {
 public:
+    //! Default constructors and destructors
     Scheduler() = default;
     ~Scheduler() = default;
 
@@ -24,15 +30,29 @@ public:
     Scheduler(const Scheduler& scheduler) = delete;
     Scheduler(Scheduler &&scheduler) noexcept = delete;
 
+    //! @brief Adds a task to the list the scheduler should manage
+    //! @param[in] task The task object
+    //! @param[in] interval How often the task should execute
+    //! @param[in] name Name of the task used for logging
     void AddTask(std::unique_ptr<Task> task, uint32_t interval, const std::string &name);
 
+    //! @brief Executes tasks on the worker thread.
+    //! If any task takes longer than the quantum
+    //! the thread will yield and the next task is worked on
     void Run(void);
 
+    //! @brief Print the ongoing metrics for this task
+    //! @param[in] task The task to print metrics for
     void PrintMetrics(const ScheduledTask& task) const;
 
 private:
+    //! The worker thread everything runs on
     std::thread thread_;
+
+    // The list of tasks that should be periodically scheduled
     std::vector<ScheduledTask> tasks_;
+
+    // Used to indicate if the scheduler should stop
     bool running_ = true;
 };
 

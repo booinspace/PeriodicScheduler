@@ -9,7 +9,7 @@
 class Process : public Task
 {
 public:
-    Process();
+    Process(const std::chrono::milliseconds quantum);
     bool execute() override;
 };
 

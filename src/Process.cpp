@@ -1,7 +1,7 @@
 #include "Process.h"
 #include "Common.h"
 
-Process::Process() : Task()
+Process::Process(const std::chrono::milliseconds quantum) : Task(quantum)
 {
 }
 
