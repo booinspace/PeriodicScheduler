@@ -17,10 +17,12 @@ std::unique_ptr<Network> NetworkBuilder::Create(const std::string& domain, const
     return std::make_unique<Network>(domain, quantum);
 }
 
-Network::Network(const std::string& domain, const std::chrono::milliseconds quantum) : Task(quantum),
-domain_(domain)
+Network::Network(const std::string& domain, const std::chrono::milliseconds quantum) : Task(quantum, domain),
+domain_(domain),
+complete_(false)
 {
     host_ = new struct gaicb;
+    std::memset(host_, 0, sizeof(struct gaicb));
 }
 
 Network::~Network(void)
@@ -67,7 +69,8 @@ void Network::CompleteTask(void)
 {
     start_.clear();
     end_.clear();
-    host_->ar_name = 0;
+    std::memset(host_, 0, sizeof(struct gaicb));
+    complete_ = false;
 }
 
 //! @brief Calculate the resolve time for all executions of this task until completion
@@ -81,10 +84,10 @@ void Network::CalculateResolveTime(void)
     }
 
     // Maintain a lock on updating shared metrics across this task across threads
-    std::lock_guard<std::mutex> lock(metrics_mutex_);
+    TaskMetrics metrics;
 
-    metrics_.min = std::min(resolve_time, metrics_.min);
-    metrics_.max = std::max(resolve_time, metrics_.max);
+    metrics.min = std::min(resolve_time, metrics_.min);
+    metrics.max = std::max(resolve_time, metrics_.max);
 
     // Remove entries from resolve times to maintain the fixed last 10 executions
     if (resolve_times_.size() > kMaxResolveTimes)
@@ -93,20 +96,29 @@ void Network::CalculateResolveTime(void)
     }
     resolve_times_.push_back(resolve_time);
 
-    // Calculate the mean for average
-    int32_t total_time = 0;
-    for (int32_t time : resolve_times_)
+    // Calculate the mean for average, if restarted we need to fill the resolve times again
+    if (resolve_times_.size() == kMaxResolveTimes+1)
     {
-        total_time += time;
+        int32_t total_time = 0;
+        for (int32_t time : resolve_times_)
+        {
+            total_time += time;
+        }
+        metrics.avg = total_time / resolve_times_.size();
     }
-    metrics_.avg = total_time / resolve_times_.size();
+    else
+    {
+        metrics.avg = metrics_.avg;
+    }
+
+    UpdateMetrics(metrics);
 }
 
 int Network::ResolveDomainAsync(const std::string& fqdn, char* ip, size_t ip_size)
 {
     // Check if the resolve has finished
     int ret = gai_error(host_);
-    if (!ret && host_->ar_name != 0)
+    if (!ret && complete_)
     {
         // Request has resolved
         ret = getnameinfo(host_->ar_result->ai_addr, host_->ar_result->ai_addrlen, ip, ip_size, nullptr, 0, NI_NUMERICHOST);
@@ -114,7 +126,7 @@ int Network::ResolveDomainAsync(const std::string& fqdn, char* ip, size_t ip_siz
     }
     else if (ret == EAI_INPROGRESS)
     {
-        STATUS_ERR("Still in progress\n");
+        STATUS_LOG("Still in progress\n");
         return -1;
     }
 
@@ -150,6 +162,7 @@ int Network::ResolveDomainAsync(const std::string& fqdn, char* ip, size_t ip_siz
     {
         // Success
         ret = getnameinfo(host_->ar_result->ai_addr, host_->ar_result->ai_addrlen, ip, ip_size, nullptr, 0, NI_NUMERICHOST);
+        complete_ = true;
         return 0;
     };
 

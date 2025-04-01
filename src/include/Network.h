@@ -50,6 +50,8 @@ private:
 
     //! gaicb structure used for async networking operations
     struct gaicb* host_;
+
+    bool complete_;
 };
 
 class NetworkBuilder

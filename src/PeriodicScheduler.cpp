@@ -6,20 +6,20 @@
 
 #include "Common.h"
 #include "Network.h"
-#include "Process.h"
+#include "System.h"
 #include "PeriodicScheduler.h"
 
 // This is an implementation of a periodic scheduler
 // The same tasks added to the task list are re-run every N seconds and aggregate results are collected.
+// Round-robin is used making use of cooperative scheduling inside the Task execute function to ensure fairness
 
 //! Maintain a fixed quantum for each task, RR implementation
-constexpr std::chrono::milliseconds kTimeQuantum = std::chrono::milliseconds(10);
+constexpr std::chrono::milliseconds kTimeQuantum = std::chrono::milliseconds(2000);
 
 //! @brief Adds a task to the list the scheduler should manage
-void Scheduler::AddTask(std::unique_ptr<Task> task, uint32_t interval, const std::string &name)
+void Scheduler::AddTask(std::unique_ptr<Task> task, uint32_t interval)
 {
     ScheduledTask t;
-    t.name = name;
     t.interval = interval;
     t.last_execution = std::chrono::steady_clock::now();
     t.task = std::move(task);
@@ -48,8 +48,8 @@ void Scheduler::Run(void)
                 }
                 else
                 {
-                    INFO_LOG("Rescheduled task: %s\n", t.name.c_str());
-                }
+                INFO_LOG("Rescheduled task: %s\n", t.task->GetName().c_str());
+            }
             }
             // Sleep the main thread for a period
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -58,12 +58,12 @@ void Scheduler::Run(void)
 }
 
 //! @brief Print the ongoing metrics for this task
-void Scheduler::PrintMetrics(const ScheduledTask& task) const
+void Scheduler::PrintMetrics(const ScheduledTask& t) const
 {
-    INFO_LOG("Task statistics %s\n", task.name.c_str());
-    INFO_LOG("  Min time: %d ms\n", task.task->GetMetrics().min);
-    INFO_LOG("  Max time: %d ms\n", task.task->GetMetrics().max);
-    INFO_LOG("  Avg time: %d ms\n", task.task->GetMetrics().avg);
+    INFO_LOG("Task statistics %s\n", t.task->GetName().c_str());
+    INFO_LOG("Min time: %d ms\n", t.task->GetMetrics().min);
+    INFO_LOG("Max time: %d ms\n", t.task->GetMetrics().max);
+    INFO_LOG("Avg time: %d ms\n", t.task->GetMetrics().avg);
 }
 
 int main(int argc, char **argv)
@@ -95,11 +95,14 @@ int main(int argc, char **argv)
     // Instanciate the scheduler
     Scheduler scheduler;
 
-    // Create some tasks
+    // Create some network tasks
     NetworkBuilder network_builder;
-    scheduler.AddTask(std::move(network_builder.Create("booth.pm", kTimeQuantum)), network_interval, "booth.pm");
-    scheduler.AddTask(std::move(network_builder.Create("google.com", kTimeQuantum)), network_interval, "google.com");
-    scheduler.AddTask(std::move(network_builder.Create("cisco.com", kTimeQuantum)), network_interval, "cisco.com");
+    scheduler.AddTask(std::move(network_builder.Create("google.com", kTimeQuantum)), network_interval);
+    scheduler.AddTask(std::move(network_builder.Create("cisco.com", kTimeQuantum)), network_interval);
+
+    // Create some system tasks
+    SystemBuilder system_builder;
+    scheduler.AddTask(std::move(system_builder.Create(System::ProbeType::MEMORY, kTimeQuantum, "Process memory usage")), system_interval);
 
     scheduler.Run();
     return 0;

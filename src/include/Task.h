@@ -7,7 +7,6 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
-#include <thread>
 
 //! Define a structure used for capturing task data
 struct TaskMetrics
@@ -25,7 +24,7 @@ class Task
 public:
     //! @brief Constructor for a Task
     //! @param[in] quantum The maximum time the task should execute for
-    Task(const std::chrono::milliseconds quantum);
+    Task(const std::chrono::milliseconds quantum, const std::string& name);
     virtual ~Task() = default;
 
     //! @brief The main task handler
@@ -36,15 +35,21 @@ public:
     //! @return Metrics of the task
     TaskMetrics GetMetrics(void) const;
 
+    //! @brief Get the name of the task
+    //! @return A string containing the name of the task
+    const std::string& GetName();
+
 protected:
+    void UpdateMetrics(TaskMetrics& metrics);
+
     //! The task metrics
     TaskMetrics metrics_;
 
-    //! Mutex around the metrics
-    std::mutex metrics_mutex_;
-
     //! The maximum time this task should execute for, before yielding to the scheduler
     std::chrono::milliseconds quantum_;
+
+    //! Name of the task
+    std::string name_;
 };
 
 #endif

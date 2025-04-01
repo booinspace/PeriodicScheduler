@@ -33,8 +33,7 @@ public:
     //! @brief Adds a task to the list the scheduler should manage
     //! @param[in] task The task object
     //! @param[in] interval How often the task should execute
-    //! @param[in] name Name of the task used for logging
-    void AddTask(std::unique_ptr<Task> task, uint32_t interval, const std::string &name);
+    void AddTask(std::unique_ptr<Task> task, uint32_t interval);
 
     //! @brief Executes tasks on the worker thread.
     //! If any task takes longer than the quantum
