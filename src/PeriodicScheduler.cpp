@@ -11,9 +11,9 @@
 
 // This is an implementation of a periodic scheduler
 // The same tasks added to the task list are re-run every N seconds and aggregate results are collected.
-// Round-robin is used making use of cooperative scheduling inside the Task execute function to ensure fairness
+// Round-robin is used to ensure tasks don't exceed a set quantum value and ensure fairness for all tasks in the scheduler
 
-//! Maintain a fixed quantum for each task, RR implementation
+//! Maximum time quantum for a task before yielding execution to the scheduler
 constexpr std::chrono::milliseconds kTimeQuantum = std::chrono::milliseconds(500);
 
 //! @brief Adds a task to the list the scheduler should manage

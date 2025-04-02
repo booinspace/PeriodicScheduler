@@ -24,7 +24,6 @@ complete_(false)
 
 Network::~Network(void)
 {
-    delete host_->ar_request;
     delete host_;
 }
 
