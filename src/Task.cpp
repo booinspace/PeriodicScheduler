@@ -54,6 +54,7 @@ const std::string& Task::GetName()
     return name_;
 }
 
+//! @brief Calculate the aggregate time metrics for this task
 void Task::CalculateMetrics()
 {
     // Work out the task time by adding the difference from all executions of this task until completion
@@ -85,6 +86,7 @@ void Task::CalculateMetrics()
     UpdateMetrics(metrics);
 }
 
+//! @brief Updates the local metrics for the task and saves them to a file
 void Task::UpdateMetrics(TaskMetrics& metrics)
 {
     std::lock_guard<std::mutex> lock(metrics_file_mutex_);

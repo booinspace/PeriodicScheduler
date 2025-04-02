@@ -14,7 +14,7 @@
 // Round-robin is used to ensure tasks don't exceed a set quantum value and ensure fairness for all tasks in the scheduler
 
 //! Maximum time quantum for a task before yielding execution to the scheduler
-constexpr std::chrono::milliseconds kTimeQuantum = std::chrono::milliseconds(500);
+constexpr std::chrono::milliseconds kTimeQuantum = std::chrono::milliseconds(1000);
 
 //! @brief Adds a task to the list the scheduler should manage
 void Scheduler::AddTask(std::unique_ptr<Task> task, uint32_t interval)

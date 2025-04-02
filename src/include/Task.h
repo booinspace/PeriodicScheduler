@@ -44,6 +44,7 @@ public:
     const std::string& GetName();
 
 protected:
+    //! @brief Calculate the aggregate time metrics for this task
     void CalculateMetrics();
 
     //! The maximum time this task should execute for, before yielding to the scheduler
@@ -58,9 +59,14 @@ protected:
     //! Name of the task
     std::string name_;
 private:
+    //! @brief Updates the local metrics for the task and saves them to a file
+    //! @param[in] metrics The task metrics
     void UpdateMetrics(TaskMetrics& metrics);
 
+    // Store the task metric information
     TaskMetrics metrics_;
+
+    // Store a list of historical task times
     std::deque<double> task_times_;
 };
 

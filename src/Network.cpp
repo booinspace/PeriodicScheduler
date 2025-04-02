@@ -14,6 +14,7 @@ std::unique_ptr<Network> NetworkBuilder::Create(const std::string& domain, const
     return std::make_unique<Network>(domain, quantum);
 }
 
+//! @brief Constructor for the Network class
 Network::Network(const std::string& domain, const std::chrono::milliseconds quantum) : Task(quantum, domain),
 domain_(domain),
 complete_(false)
@@ -22,6 +23,7 @@ complete_(false)
     std::memset(host_, 0, sizeof(struct gaicb));
 }
 
+//! @brief Destructor for the Network class
 Network::~Network(void)
 {
     delete host_;
@@ -74,6 +76,7 @@ void Network::CompleteTask(void)
     complete_ = false;
 }
 
+//! @brief Resolve a domain name to an IPV4 address
 int Network::ResolveDomainAsync(const std::string& fqdn, char* ip, size_t ip_size)
 {
     // Check if the resolve has finished

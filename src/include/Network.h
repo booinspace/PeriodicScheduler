@@ -42,12 +42,14 @@ private:
     //! gaicb structure used for async networking operations
     struct gaicb* host_;
 
+    // Indicate if the network request has resolved
     bool complete_;
 };
 
 class NetworkBuilder
 {
 public:
+    // Default constructor and destructor
     NetworkBuilder() = default;
     ~NetworkBuilder() = default;
 

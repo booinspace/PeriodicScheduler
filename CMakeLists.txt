@@ -22,12 +22,6 @@ else()
     message(STATUS "Building with Release")
 endif()
 
-file(GLOB BOOST_SOURCES "${SRC_DIR}/Boost/*.cpp")
-find_package(Boost REQUIRED)
-add_executable(scheduler_boost ${BOOST_SOURCES})
-target_link_libraries(scheduler_boost PRIVATE Boost::headers)
-target_include_directories(scheduler_boost PUBLIC ${INCLUDE_DIR})
-
 # Setup compiler options
 target_compile_options(periodic_scheduler PRIVATE -Wall -Wextra -Wpedantic)
 
