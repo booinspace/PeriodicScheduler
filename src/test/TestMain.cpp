@@ -1,9 +1,28 @@
 
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 
-int main(int argc, char **argv)
+#include "Task.h"
+#include "Network.h"
+#include "Common.h"
+
+class NetworkTest : public Network, public ::testing::Test
 {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+public:
+    NetworkTest() : Network("google.com", std::chrono::seconds(1))
+    {}
+
+    bool execute(std::atomic<bool>& should_stop) override
+    {
+        STATUS_LOG("Executing test network\n");
+        return true;
+    }
+};
+
+// Ensure that the scheduler
+TEST_F(NetworkTest, ExecuteTest)
+{
+    std::atomic<bool> should_stop(false);
+    bool complete = execute(should_stop);
+
+    EXPECT_TRUE(complete);
 }

@@ -42,7 +42,7 @@ public:
     // Delete move assignment constructor
     SystemBuilder& operator=(SystemBuilder&& other) noexcept = delete;
 
-    //! @brief Create a new instance of a System class
+    //! @brief Create a new instance of a System
     //! @return A unique pointer to a newly created System class
     std::unique_ptr<SystemMemory> Create(System::ProbeType type, const std::chrono::milliseconds quantum, const std::string& name);
 };

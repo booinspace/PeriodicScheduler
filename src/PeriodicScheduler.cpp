@@ -68,7 +68,7 @@ void Scheduler::Run(void)
                 }
             }
             // Sleep the main thread for a period
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 }
@@ -77,9 +77,9 @@ void Scheduler::Run(void)
 void Scheduler::PrintMetrics(const ScheduledTask& t) const
 {
     INFO_LOG("Task statistics %s\n", t.task->GetName().c_str());
-    INFO_LOG("Min time: %d ms\n", t.task->GetMetrics().min);
-    INFO_LOG("Max time: %d ms\n", t.task->GetMetrics().max);
-    INFO_LOG("Avg time: %d ms\n\n", t.task->GetMetrics().avg);
+    INFO_LOG("Min time: %.2f ms\n", t.task->GetMetrics().min);
+    INFO_LOG("Max time: %.2f ms\n", t.task->GetMetrics().max);
+    INFO_LOG("Avg time: %.2f ms\n\n", t.task->GetMetrics().avg);
 }
 
 int main(int argc, char **argv)
@@ -91,6 +91,7 @@ int main(int argc, char **argv)
         {nullptr, 0, nullptr, 0}
     };
 
+    // Intervals in milliseconds
     int32_t network_interval = 4000;
     int32_t system_interval = 3000;
 

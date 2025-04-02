@@ -57,10 +57,10 @@ const std::string& Task::GetName()
 void Task::CalculateMetrics()
 {
     // Work out the task time by adding the difference from all executions of this task until completion
-    int32_t time = 0;
+    double time = 0;
     for (uint32_t i = 0; i < start_.size(); i++)
     {
-        time += std::chrono::duration_cast<std::chrono::milliseconds>(end_[i] - start_[i]).count();
+        time += std::chrono::duration_cast<std::chrono::microseconds>(end_[i] - start_[i]).count() / 1000.0;
     }
 
     TaskMetrics metrics;
@@ -75,8 +75,8 @@ void Task::CalculateMetrics()
     task_times_.push_back(time);
 
     // Calculate the mean for average, if restarted we need to fill the queue again
-    int32_t total_time = 0;
-    for (int32_t time : task_times_)
+    double total_time = 0;
+    for (const auto& time : task_times_)
     {
         total_time += time;
     }

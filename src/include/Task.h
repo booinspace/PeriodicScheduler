@@ -15,11 +15,11 @@
 struct TaskMetrics
 {
     //! Minimum time the task took
-    int32_t min;
+    double min;
     //! Average time the task took (mean)
-    int32_t avg;
+    double avg;
     //! Maximum time the task took
-    int32_t max;
+    double max;
 };
 
 class Task
@@ -30,8 +30,9 @@ public:
     Task(const std::chrono::milliseconds quantum, const std::string& name);
     virtual ~Task() = default;
 
-    //! @brief The main task handler
-    //! NOTE: This function must implement cooperative multitasking so that it yields safely after the quantum time
+    //! @brief Execute this class behaviour
+    //! @param[in] should_stop Mark whether the task should not continue
+    //! @return If the task completed successfully
     virtual bool execute(std::atomic<bool>& should_stop) = 0;
 
     //! @brief Get the task metrics
@@ -60,7 +61,7 @@ private:
     void UpdateMetrics(TaskMetrics& metrics);
 
     TaskMetrics metrics_;
-    std::deque<int32_t> task_times_;
+    std::deque<double> task_times_;
 };
 
 #endif

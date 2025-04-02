@@ -1,6 +1,12 @@
+set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 add_executable(Tests
     TestMain.cpp
+    ${SRC_DIR}/Network.cpp
+    ${SRC_DIR}/Task.cpp
+    ${SRC_DIR}/System.cpp
 )
+
+target_include_directories(Tests PUBLIC "${SRC_DIR}/include")
 
 target_link_libraries(Tests
     GTest::gtest
@@ -9,10 +15,9 @@ target_link_libraries(Tests
     GTest::gmock_main
 )
 
-add_test(NAME Tests COMMAND Tests)
-
-add_custom_target(check
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target test
+add_custom_target(run_tests
+    COMMAND $<TARGET_FILE:Tests>
     DEPENDS Tests
-    COMMENT "Building and running tests"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running tests"
 )

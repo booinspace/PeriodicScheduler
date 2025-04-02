@@ -8,7 +8,7 @@
 #include <memory>
 #include <cstring>
 
-//! @brief Create a new instance of a Network class
+//! @brief Create a new instance of a Network
 std::unique_ptr<Network> NetworkBuilder::Create(const std::string& domain, const std::chrono::milliseconds quantum)
 {
     return std::make_unique<Network>(domain, quantum);
@@ -31,12 +31,17 @@ Network::~Network(void)
 //! @brief Execute this class behaviour
 bool Network::execute(std::atomic<bool>& should_stop)
 {
+    // Check if the task should return execution
+    if (should_stop.load()) {
+        return false;
+    }
+
     start_.push_back(std::chrono::steady_clock::now());
 
     char ip[INET_ADDRSTRLEN];
     if (ResolveDomainAsync(domain_, ip, sizeof(ip)) == 0)
     {
-        STATUS_LOG("Resolved %s attempts: %ld\n", ip, start_.size());
+        STATUS_LOG("Resolved %s %s attempts: %ld\n",  name_.c_str(), ip, start_.size());
         end_.push_back(std::chrono::steady_clock::now());
 
         // Work out the final task times

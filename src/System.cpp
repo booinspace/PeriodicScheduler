@@ -13,12 +13,13 @@ SystemMemory::SystemMemory(const std::chrono::milliseconds quantum, const std::s
 {}
 
 struct MemoryInfo {
-    long vmrss_kb = 0; // Resident Set Size (actual memory used)
-    long vmsize_kb = 0; // Virtual memory size
+    // Resident Set Size (actual memory used in physical memory)
+    long vmrss_kb = 0;
 };
 
-MemoryInfo getMemoryUsage(pid_t pid) {
-    MemoryInfo memInfo;
+//! @brief Returns the memory usage for the current running process
+MemoryInfo GetMemoryUsage(pid_t pid) {
+    MemoryInfo mem_info;
     std::ifstream file("/proc/" + std::to_string(pid) + "/status");
 
     std::string line;
@@ -30,27 +31,25 @@ MemoryInfo getMemoryUsage(pid_t pid) {
 
         iss >> key >> value >> unit;
         if (key == "VmRSS:") {
-            memInfo.vmrss_kb = value;  // Resident Set Size
-        } else if (key == "VmSize:") {
-            memInfo.vmsize_kb = value;  // Virtual Memory Size
+            mem_info.vmrss_kb = value;
         }
     }
-    return memInfo;
+    return mem_info;
 }
 
+//! @brief Execute this class behaviour
 bool SystemMemory::execute(std::atomic<bool>& should_stop)
 {
     // Check if the task should return execution
-        if (should_stop.load()) {
-            return false;
-        }
+    if (should_stop.load()) {
+        return false;
+    }
 
     start_.push_back(std::chrono::steady_clock::now());
 
     pid_t pid = getpid();
-    MemoryInfo totalMem = getMemoryUsage(pid);
-    std::cout << "Total Memory Usage (RSS): " << totalMem.vmrss_kb << " KB\n";
-    std::cout << "Total Virtual Memory: " << totalMem.vmsize_kb << " KB\n";
+    MemoryInfo total_mem = GetMemoryUsage(pid);
+    std::cout << "Total Memory Usage (RSS): " << total_mem.vmrss_kb << " KB\n";
 
     end_.push_back(std::chrono::steady_clock::now());
 
@@ -60,6 +59,7 @@ bool SystemMemory::execute(std::atomic<bool>& should_stop)
     return true;
 }
 
+//! @brief Create a new instance of a System
 std::unique_ptr<SystemMemory> SystemBuilder::Create(System::ProbeType type, const std::chrono::milliseconds quantum, const std::string& name)
 {
     switch(type)

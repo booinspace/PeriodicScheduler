@@ -60,7 +60,7 @@ public:
     // Delete move assignment constructor
     NetworkBuilder& operator=(NetworkBuilder&& other) noexcept = delete;
 
-    //! @brief Create a new instance of a Network class
+    //! @brief Create a new instance of a Network
     //! @return A unique pointer to a newly created network class
     std::unique_ptr<Network> Create(const std::string& domain, const std::chrono::milliseconds quantum);
 };
