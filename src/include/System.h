@@ -2,6 +2,7 @@
 #define SYSTEM_H
 
 #include <string>
+#include <optional>
 
 #include "Task.h"
 
@@ -23,8 +24,17 @@ public:
 class SystemMemory : public System
 {
 public:
+    struct MemoryInfo {
+        // Resident Set Size (actual memory used in physical memory)
+        long vmrss_kb;
+    };
+
     SystemMemory(const std::chrono::milliseconds quantum, const std::string& name);
     bool execute(std::atomic<bool>& should_stop) override;
+
+private:
+    //! @brief Get the memory usage of the current pid
+    std::optional<MemoryInfo> GetMemoryUsage(pid_t pid);
 };
 
 class SystemBuilder

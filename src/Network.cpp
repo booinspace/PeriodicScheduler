@@ -42,7 +42,7 @@ bool Network::execute(std::atomic<bool>& should_stop)
     char ip[INET_ADDRSTRLEN];
     if (ResolveDomainAsync(domain_, ip, sizeof(ip)) == 0)
     {
-        STATUS_LOG("Resolved %s %s attempts: %ld\n",  name_.c_str(), ip, start_.size());
+        INFO_LOG("Resolved %s %s attempts: %ld\n",  name_.c_str(), ip, start_.size());
         end_.push_back(std::chrono::steady_clock::now());
 
         // Work out the final task times
@@ -119,7 +119,7 @@ int Network::ResolveDomainAsync(const std::string& fqdn, char* ip, size_t ip_siz
     // Check the resolve status
     if (gai_error(host_))
     {
-        STATUS_LOG("Error resolving %s\n", gai_strerror(ret));
+        STATUS_ERR("Error resolving %s\n", gai_strerror(ret));
     }
     else
     {

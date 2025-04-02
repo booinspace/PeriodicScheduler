@@ -24,6 +24,8 @@ void Scheduler::AddTask(std::unique_ptr<Task> task, uint32_t interval)
     t.last_execution = std::chrono::steady_clock::now();
     t.task = std::move(task);
 
+    INFO_LOG("Added task to list: %s\n", t.task->GetName().c_str());
+
     tasks_.push_back(std::move(t));
 }
 

@@ -2,8 +2,8 @@
 A C++ implementation of a periodic task scheduler that monitors both network and sytem metrics at configurable intervals. The scheduler implements round-robin approach to ensure fairness of tasks and tracks statistical data on task performance.
 
 ### How to run
-`./build.sh <Debug>` to include all logging
-`./build.sh` to create a release binary
+`./build.sh` to create a debug build and include all logging
+`./build.sh Release` to create an optimised release binary
 
 The binary will be placed in `build/periodic_scheduler`
 

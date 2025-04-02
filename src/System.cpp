@@ -12,13 +12,9 @@ System::System(const std::chrono::milliseconds quantum, const std::string& name)
 SystemMemory::SystemMemory(const std::chrono::milliseconds quantum, const std::string& name) : System(quantum, name)
 {}
 
-struct MemoryInfo {
-    // Resident Set Size (actual memory used in physical memory)
-    long vmrss_kb = 0;
-};
-
 //! @brief Returns the memory usage for the current running process
-MemoryInfo GetMemoryUsage(pid_t pid) {
+std::optional<SystemMemory::MemoryInfo> SystemMemory::GetMemoryUsage(pid_t pid) 
+{
     MemoryInfo mem_info;
     std::ifstream file("/proc/" + std::to_string(pid) + "/status");
 
@@ -32,9 +28,11 @@ MemoryInfo GetMemoryUsage(pid_t pid) {
         iss >> key >> value >> unit;
         if (key == "VmRSS:") {
             mem_info.vmrss_kb = value;
+            file.close();
+            return mem_info;
         }
     }
-    return mem_info;
+    return std::nullopt;
 }
 
 //! @brief Execute this class behaviour
@@ -48,8 +46,14 @@ bool SystemMemory::execute(std::atomic<bool>& should_stop)
     start_.push_back(std::chrono::steady_clock::now());
 
     pid_t pid = getpid();
-    MemoryInfo total_mem = GetMemoryUsage(pid);
-    std::cout << "Total Memory Usage (RSS): " << total_mem.vmrss_kb << " KB\n";
+    std::optional<SystemMemory::MemoryInfo> total_mem = GetMemoryUsage(pid);
+    if (!total_mem)
+    {
+        // Task did not complete
+        INFO_ERR("Failed to retrieve memory usage for PID: %d\n", pid);
+        return false;
+    }
+    INFO_LOG("Total Memory Usage (RSS): %ldKB\n", (*total_mem).vmrss_kb);
 
     end_.push_back(std::chrono::steady_clock::now());
 

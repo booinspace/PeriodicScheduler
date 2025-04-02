@@ -15,11 +15,11 @@ file(GLOB SOURCES "${SRC_DIR}/*.cpp")
 add_executable(periodic_scheduler ${SOURCES})
 target_include_directories(periodic_scheduler PUBLIC ${INCLUDE_DIR})
 
-if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "Building with Release")
+else()
     message(STATUS "Building with Debug")
     add_compile_definitions(DEBUG)
-else()
-    message(STATUS "Building with Release")
 endif()
 
 # Setup compiler options
