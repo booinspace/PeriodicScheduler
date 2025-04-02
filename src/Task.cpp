@@ -6,7 +6,10 @@
 #include <vector>
 
 //! Maintain a static mutex for the metrics file
-static std::mutex metrics_mutex_;
+static std::mutex metrics_file_mutex_;
+
+//! Maintain a maximum queue for historic metrics
+static constexpr uint32_t kMaxTaskMetrics = 5;
 
 //! @brief Constructor for a Task
 Task::Task(const std::chrono::milliseconds quantum, const std::string& name)
@@ -51,9 +54,40 @@ const std::string& Task::GetName()
     return name_;
 }
 
+void Task::CalculateMetrics()
+{
+    // Work out the task time by adding the difference from all executions of this task until completion
+    int32_t time = 0;
+    for (uint32_t i = 0; i < start_.size(); i++)
+    {
+        time += std::chrono::duration_cast<std::chrono::milliseconds>(end_[i] - start_[i]).count();
+    }
+
+    TaskMetrics metrics;
+    metrics.min = std::min(time, metrics_.min);
+    metrics.max = std::max(time, metrics_.max);
+
+    // Remove entries to maintain max queue size
+    if (task_times_.size() > kMaxTaskMetrics)
+    {
+        task_times_.pop_front();
+    }
+    task_times_.push_back(time);
+
+    // Calculate the mean for average, if restarted we need to fill the queue again
+    int32_t total_time = 0;
+    for (int32_t time : task_times_)
+    {
+        total_time += time;
+    }
+    metrics.avg = total_time / task_times_.size();
+
+    UpdateMetrics(metrics);
+}
+
 void Task::UpdateMetrics(TaskMetrics& metrics)
 {
-    std::lock_guard<std::mutex> lock(metrics_mutex_);
+    std::lock_guard<std::mutex> lock(metrics_file_mutex_);
     metrics_ = metrics;
 
     std::ifstream in_file("metrics", std::ios::in);

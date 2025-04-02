@@ -14,7 +14,7 @@
 // Round-robin is used making use of cooperative scheduling inside the Task execute function to ensure fairness
 
 //! Maintain a fixed quantum for each task, RR implementation
-constexpr std::chrono::milliseconds kTimeQuantum = std::chrono::milliseconds(2000);
+constexpr std::chrono::milliseconds kTimeQuantum = std::chrono::milliseconds(500);
 
 //! @brief Adds a task to the list the scheduler should manage
 void Scheduler::AddTask(std::unique_ptr<Task> task, uint32_t interval)
@@ -40,16 +40,32 @@ void Scheduler::Run(void)
         {
             if (now >= (t.last_execution + std::chrono::milliseconds(t.interval)))
             {
-                bool complete = t.task->execute();
-                t.last_execution = now;
+                INFO_LOG("Running task: %s\n", t.task->GetName().c_str());
+                // Run the task asynchronously
+                auto future = std::async(std::launch::async, [&]() {
+                    return t.task->execute(should_stop_);
+                });
 
-                if (complete) {
-                    PrintMetrics(t);
+                // Wait for the task to complete within the quantum period
+                if (future.wait_for(kTimeQuantum) == std::future_status::timeout)
+                {
+                    // Task exceeded its quantum, reschedule it
+                    should_stop_.store(true);
+                    INFO_LOG("Task %s exceeded quantum and was rescheduled\n", t.task->GetName().c_str());
                 }
                 else
                 {
-                INFO_LOG("Rescheduled task: %s\n", t.task->GetName().c_str());
-            }
+                    should_stop_.store(false);
+
+                    // Task completed within the quantum
+                    bool complete = future.get();
+                    t.last_execution = now;
+
+                    if (complete)
+                    {
+                        PrintMetrics(t);
+                    }
+                }
             }
             // Sleep the main thread for a period
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -63,7 +79,7 @@ void Scheduler::PrintMetrics(const ScheduledTask& t) const
     INFO_LOG("Task statistics %s\n", t.task->GetName().c_str());
     INFO_LOG("Min time: %d ms\n", t.task->GetMetrics().min);
     INFO_LOG("Max time: %d ms\n", t.task->GetMetrics().max);
-    INFO_LOG("Avg time: %d ms\n", t.task->GetMetrics().avg);
+    INFO_LOG("Avg time: %d ms\n\n", t.task->GetMetrics().avg);
 }
 
 int main(int argc, char **argv)
@@ -75,8 +91,8 @@ int main(int argc, char **argv)
         {nullptr, 0, nullptr, 0}
     };
 
-    int32_t network_interval = 1500;
-    int32_t system_interval = 2000;
+    int32_t network_interval = 4000;
+    int32_t system_interval = 3000;
 
     int opt;
     while ((opt = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1)
@@ -102,7 +118,7 @@ int main(int argc, char **argv)
 
     // Create some system tasks
     SystemBuilder system_builder;
-    scheduler.AddTask(std::move(system_builder.Create(System::ProbeType::MEMORY, kTimeQuantum, "Process memory usage")), system_interval);
+    scheduler.AddTask(std::move(system_builder.Create(System::ProbeType::MEMORY, kTimeQuantum, "MEMORY")), system_interval);
 
     scheduler.Run();
     return 0;

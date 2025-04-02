@@ -17,14 +17,14 @@ public:
     };
 
     System(const std::chrono::milliseconds quantum, const std::string& name);
-    bool execute() = 0;
+    bool execute(std::atomic<bool>& should_stop) = 0;
 };
 
 class SystemMemory : public System
 {
 public:
     SystemMemory(const std::chrono::milliseconds quantum, const std::string& name);
-    bool execute() override;
+    bool execute(std::atomic<bool>& should_stop) override;
 };
 
 class SystemBuilder

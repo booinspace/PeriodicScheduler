@@ -8,9 +8,6 @@
 #include <memory>
 #include <cstring>
 
-//! Maintain only the last 10 resolves for metrics
-static constexpr uint32_t kMaxResolveTimes = 5;
-
 //! @brief Create a new instance of a Network class
 std::unique_ptr<Network> NetworkBuilder::Create(const std::string& domain, const std::chrono::milliseconds quantum)
 {
@@ -32,7 +29,7 @@ Network::~Network(void)
 }
 
 //! @brief Execute this class behaviour
-bool Network::execute()
+bool Network::execute(std::atomic<bool>& should_stop)
 {
     start_.push_back(std::chrono::steady_clock::now());
 
@@ -42,8 +39,8 @@ bool Network::execute()
         STATUS_LOG("Resolved %s attempts: %ld\n", ip, start_.size());
         end_.push_back(std::chrono::steady_clock::now());
 
-        // Work out the final resolve times
-        CalculateResolveTime();
+        // Work out the final task times
+        CalculateMetrics();
 
         // If the domain resolved, reset the start and end times so that the task will run again
         CompleteTask();
@@ -71,47 +68,6 @@ void Network::CompleteTask(void)
     end_.clear();
     std::memset(host_, 0, sizeof(struct gaicb));
     complete_ = false;
-}
-
-//! @brief Calculate the resolve time for all executions of this task until completion
-void Network::CalculateResolveTime(void)
-{
-    // Work out the resolved time by adding the difference from all executions to resolve
-    int32_t resolve_time = 0;
-    for (uint32_t i = 0; i < start_.size(); i++)
-    {
-        resolve_time += std::chrono::duration_cast<std::chrono::milliseconds>(end_[i] - start_[i]).count();
-    }
-
-    // Maintain a lock on updating shared metrics across this task across threads
-    TaskMetrics metrics;
-
-    metrics.min = std::min(resolve_time, metrics_.min);
-    metrics.max = std::max(resolve_time, metrics_.max);
-
-    // Remove entries from resolve times to maintain the fixed last 10 executions
-    if (resolve_times_.size() > kMaxResolveTimes)
-    {
-        resolve_times_.pop_front();
-    }
-    resolve_times_.push_back(resolve_time);
-
-    // Calculate the mean for average, if restarted we need to fill the resolve times again
-    if (resolve_times_.size() == kMaxResolveTimes+1)
-    {
-        int32_t total_time = 0;
-        for (int32_t time : resolve_times_)
-        {
-            total_time += time;
-        }
-        metrics.avg = total_time / resolve_times_.size();
-    }
-    else
-    {
-        metrics.avg = metrics_.avg;
-    }
-
-    UpdateMetrics(metrics);
 }
 
 int Network::ResolveDomainAsync(const std::string& fqdn, char* ip, size_t ip_size)

@@ -45,8 +45,11 @@ public:
     void PrintMetrics(const ScheduledTask& task) const;
 
 private:
-    //! The worker thread everything runs on
+    // The scheduler thread
     std::thread thread_;
+
+    // Atomic boolean used if the task exceeds quantum
+    std::atomic<bool> should_stop_ = false;
 
     // The list of tasks that should be periodically scheduled
     std::vector<ScheduledTask> tasks_;

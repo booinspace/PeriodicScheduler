@@ -5,8 +5,11 @@
 #include <memory>
 #include <stdint.h>
 #include <chrono>
-#include <condition_variable>
 #include <mutex>
+#include <deque>
+#include <vector>
+#include <thread>
+#include <atomic>
 
 //! Define a structure used for capturing task data
 struct TaskMetrics
@@ -29,7 +32,7 @@ public:
 
     //! @brief The main task handler
     //! NOTE: This function must implement cooperative multitasking so that it yields safely after the quantum time
-    virtual bool execute() = 0;
+    virtual bool execute(std::atomic<bool>& should_stop) = 0;
 
     //! @brief Get the task metrics
     //! @return Metrics of the task
@@ -40,16 +43,24 @@ public:
     const std::string& GetName();
 
 protected:
-    void UpdateMetrics(TaskMetrics& metrics);
-
-    //! The task metrics
-    TaskMetrics metrics_;
+    void CalculateMetrics();
 
     //! The maximum time this task should execute for, before yielding to the scheduler
     std::chrono::milliseconds quantum_;
 
+    //! Capture the start times for every execution of this task
+    std::vector<std::chrono::steady_clock::time_point> start_;
+
+    //! Capture the end times for every execution of this task
+    std::vector<std::chrono::steady_clock::time_point> end_;
+
     //! Name of the task
     std::string name_;
+private:
+    void UpdateMetrics(TaskMetrics& metrics);
+
+    TaskMetrics metrics_;
+    std::deque<int32_t> task_times_;
 };
 
 #endif

@@ -38,12 +38,24 @@ MemoryInfo getMemoryUsage(pid_t pid) {
     return memInfo;
 }
 
-bool SystemMemory::execute()
+bool SystemMemory::execute(std::atomic<bool>& should_stop)
 {
+    // Check if the task should return execution
+        if (should_stop.load()) {
+            return false;
+        }
+
+    start_.push_back(std::chrono::steady_clock::now());
+
     pid_t pid = getpid();
     MemoryInfo totalMem = getMemoryUsage(pid);
     std::cout << "Total Memory Usage (RSS): " << totalMem.vmrss_kb << " KB\n";
     std::cout << "Total Virtual Memory: " << totalMem.vmsize_kb << " KB\n";
+
+    end_.push_back(std::chrono::steady_clock::now());
+
+    // Work out the length the task took
+    CalculateMetrics();
 
     return true;
 }

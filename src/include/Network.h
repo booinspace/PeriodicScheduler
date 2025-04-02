@@ -20,7 +20,7 @@ public:
     ~Network(void);
 
     //! @brief Execute this class behaviour
-    bool execute() override;
+    bool execute(std::atomic<bool>& should_stop) override;
 
     //! @brief Resolve a domain name to an IPV4 address
     //! NOTE: Async function, waits for domain to resolve, otherwise returns
@@ -35,15 +35,6 @@ private:
 
     //! @brief Calculate the resolve time for all executions of this task until completion
     void CalculateResolveTime(void);
-
-    //! Capture the start times for every execution of this task
-    std::vector<std::chrono::steady_clock::time_point> start_;
-
-    //! Capture the end times for every execution of this task
-    std::vector<std::chrono::steady_clock::time_point> end_;
-
-    //! Maintain a queue of resolve times for each execution
-    std::deque<int32_t> resolve_times_;
 
     //! The domain to resolve
     std::string domain_;
